@@ -1,5 +1,5 @@
 ## 🚀 Project Name
-### 🔹 Short Description:
+### 🔹 Task Management Application:
 A task management application where users can add, edit, delete, and reorder tasks. Users can drag tasks between categories (To-Do, In Progress, Done), reorder within categories, and changes are instantly saved in the database.
 
 #### 🔗 Live Links
