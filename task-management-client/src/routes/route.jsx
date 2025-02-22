@@ -5,6 +5,8 @@ import PageNotFound from "../pages/PageNotFound/PageNotFound";
 import LoginPage from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import PublicRoute from "./PublicRoute";
+import Task_Update from "../pages/Task_Update/Task_Update";
+import PrivateRoute from "./PrivateRoute";
 
 export const router = createBrowserRouter(
   [
@@ -15,7 +17,15 @@ export const router = createBrowserRouter(
       children: [
         {
           path: "/",
-          element: <App></App>,
+          element: (
+            <PrivateRoute>
+              <App></App>
+            </PrivateRoute>
+          ),
+        },
+        {
+          path: "/task/:id",
+          element: <Task_Update></Task_Update>,
         },
         {
           path: "/login",

@@ -14,7 +14,7 @@ export default function App() {
   const [newTask, setNewTask] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const categories = ["To-Do", "In Progress", "Done", "Delete"];
-
+  const [loading, setLoading] = useState(false);
   const AllTasks = async () => {
     try {
       const response = await axios.get("/tasks");
@@ -44,8 +44,8 @@ export default function App() {
         },
         {
           _id: "67b8792a60bbccc9192b4655",
-          title: "Default",
-          description: "This is a default task",
+          title: "Drag to Delete",
+          description: "Delete your task",
           category: "Delete",
           order: 1,
         },
@@ -67,12 +67,22 @@ export default function App() {
       category: "To-Do",
     };
     setTasks([newTaskData, ...tasks]);
-    await axios.post("/tasks", newTaskData);
-    setNewTask("");
-    setNewDescription("");
+    const response = await axios.post("/tasks", newTaskData);
+    if (response?.data?.success) {
+      swal({
+        title: response?.data?.message,
+        icon: "success",
+      });
+      setNewTask("");
+      setNewDescription("");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
   };
 
   const handleDragEnd = async (event) => {
+    setLoading(true);
     const { active, over } = event;
     if (!over) return;
 
@@ -87,82 +97,116 @@ export default function App() {
       updatedTasks.splice(newIndex, 0, movedTask);
     }
     setTasks(updatedTasks);
-    await axios.put("/tasks/reorder", { updatedTasks });
-    const response = await axios.delete(`/tasks/${active?.id}`);
 
-    if (response?.data?.success) {
-      swal({
-        title: response?.data?.message,
-        icon: "success",
-        buttons: "ok",
-      });
-      // Update state after successful deletion
-      setTasks((prevTasks) =>
-        prevTasks.filter((task) => task?._id !== active?.id)
-      );
+    const updateresponsive = await axios.put("/tasks/reorder", {
+      updatedTasks,
+    });
+    if (updateresponsive?.data?.success) {
+      setLoading(false);
+    }
+
+    if (over?.id === "67b8792a60bbccc9192b4655") {
+      const response = await axios.delete(`/tasks/${active?.id}`);
+      if (response?.data?.success) {
+        swal({
+          title: response?.data?.message,
+          icon: "success",
+          buttons: "ok",
+        });
+        setLoading(false);
+        // Update state after successful deletion
+        setTasks((prevTasks) =>
+          prevTasks.filter((task) => task?._id !== active?.id)
+        );
+      }
     }
   };
 
   return (
-    <div className="min-h-screen relative bg-gray-900 text-white p-8">
-      <h1 className="text-3xl font-bold mb-4 text-center">Task Manager</h1>
-      <div className="flex justify-center space-x-2 mb-4">
-        <input
-          type="text"
-          className="p-2 rounded bg-gray-800"
-          placeholder="New task..."
-          value={newTask}
-          onChange={(e) => setNewTask(e.target.value)}
-        />
-        <input
-          type="text"
-          className="p-2 rounded bg-gray-800"
-          placeholder="Description..."
-          value={newDescription}
-          onChange={(e) => setNewDescription(e.target.value)}
-        />
-        <button
-          onClick={addTask}
-          className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Add Task
-        </button>
+    <main className="relative">
+      <div className="min-h-screen bg-gray-900 text-white p-8">
+        <h1 className="text-3xl font-bold mb-4 text-center">Task Manager</h1>
+        <div className="flex justify-center space-x-2 mb-4">
+          <input
+            type="text"
+            className="p-2 rounded bg-gray-800"
+            placeholder="New task..."
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+          />
+          <input
+            type="text"
+            className="p-2 rounded bg-gray-800"
+            placeholder="Description..."
+            value={newDescription}
+            onChange={(e) => setNewDescription(e.target.value)}
+          />
+          <button
+            onClick={addTask}
+            className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Add Task
+          </button>
+        </div>
+        <div className=" ">
+          <DndContext
+            collisionDetection={closestCorners}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-3 gap-4 overflow-hidden">
+              {categories.map((category) => (
+                <SortableContext
+                  key={category}
+                  items={tasks
+                    .filter((task) => task.category === category)
+                    .map((task) => task?._id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {category !== "Delete" ? (
+                    <div
+                      className="bg-gray-800 p-4 rounded min-h-[300px]"
+                      ref={(el) => el && (el.dataset.category = category)} // Store category
+                      data-category={category} // Ensure category recognition
+                    >
+                      <h2 className="text-xl font-bold mb-2">{category}</h2>
+                      {tasks
+                        .filter((task) => task.category === category)
+                        .map((task, index) => (
+                          <SortableItem key={index} task={task} />
+                        ))}
+                    </div>
+                  ) : (
+                    <div className=" fixed bottom-0 right-0 col-span-3">
+                      <div
+                        className="bg-gray-600 hover:bg-slate-400 p-4 rounded "
+                        ref={(el) => el && (el.dataset.category = category)} // Store category
+                        data-category={category} // Ensure category recognition
+                      >
+                        {tasks
+                          .filter((task) => task.category === category)
+                          .map((task, index) => (
+                            <SortableItem key={index} task={task} />
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </SortableContext>
+              ))}
+            </div>
+          </DndContext>
+        </div>
       </div>
 
-      <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-3 gap-4">
-          {categories.map((category) => (
-            <SortableContext
-              key={category}
-              items={tasks
-                .filter((task) => task.category === category)
-                .map((task) => task?._id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {category !== "Delete" ? (
-                <div
-                  className="bg-gray-800 p-4 rounded min-h-[300px]"
-                  ref={(el) => el && (el.dataset.category = category)} // Store category
-                  data-category={category} // Ensure category recognition
-                >
-                  <h2 className="text-xl font-bold mb-2">{category}</h2>
-                  {tasks
-                    .filter((task) => task.category === category)
-                    .map((task, index) => (
-                      <SortableItem key={index} task={task} />
-                    ))}
-                </div>
-              ) : (
-                <div className=" border rounded-md hover:bg-slate-700 flex items-center justify-center h-52 w-full col-span-3">
-                  <div className=" ">
-                    <h1 className=" text-white">Drag to Delete</h1>
-                  </div>
-                </div>
-              )}
-            </SortableContext>
-          ))}
+      <div
+        className={`${
+          !loading && "hidden"
+        } fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-slate-800/80`}
+      >
+        <div className=" flex flex-col items-center">
+          <h1 className=" text-white">Please Wait...</h1>
+          <div className=" mt-5 loading loading-spinner loading-md bg-cyan-600"></div>
         </div>
-      </DndContext>
-    </div>
+      </div>
+    </main>
   );
 }

@@ -21,22 +21,7 @@ app.use(
   })
 );
 
-
-
-// const db = mongoose.connection;
-// db.once("open", () => {
-//   console.log("✅ Connected to MongoDB");
-
-//   // Create a change stream on the tasks collection
-//   const taskChangeStream = db.collection("tasks").watch();
-
-//   taskChangeStream.on("change", async (change) => {
-//     console.log(change);
-//   });
-// });
-
 app.use("/api/user", userRoutes);
-
 mongoose.connect(clientUrl2);
 
 // Task Schema & Model
@@ -74,9 +59,12 @@ app.post("/tasks", async (req, res) => {
 
     const newTask = new Task({ title, description, category, order });
     await newTask.save();
-    return res.status(201).json(newTask);
+    return res.status(201).json({
+      message: "Task added successfully",
+      success: true,
+    });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ message: error.message, success: true });
   }
 });
 
@@ -84,7 +72,6 @@ app.post("/tasks", async (req, res) => {
 app.delete("/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id)
     await Task.findByIdAndDelete(id);
     return res.status(200).json({ message: "Task deleted", success: true });
   } catch (error) {
@@ -96,7 +83,6 @@ app.delete("/tasks/:id", async (req, res) => {
 app.put("/tasks/reorder", async (req, res) => {
   try {
     const { updatedTasks } = req.body;
-
     // Update order field for each task
     for (let i = 0; i < updatedTasks.length; i++) {
       await Task.findByIdAndUpdate(updatedTasks[i]._id, {
@@ -104,7 +90,9 @@ app.put("/tasks/reorder", async (req, res) => {
         order: i,
       });
     }
-    return res.json({ message: "Tasks reordered successfully" });
+    return res
+      .status(200)
+      .json({ message: "Tasks reordered successfully", success: true });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

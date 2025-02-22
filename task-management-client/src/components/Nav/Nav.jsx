@@ -34,10 +34,7 @@ const Nav = () => {
     <nav className=" bg-gradient-to-bl from-teal-400 to-teal-600 text-white">
       <div className=" container mx-auto px-5">
         <div className="  flex items-center justify-between h-20">
-          <div className=" font-semibold">
-            Real
-            <span className=" text-red-500 font-extrabold text-xl">State</span>
-          </div>
+          <div className=" font-semibold">Task Management</div>
           <div
             onClick={(e) => e.stopPropagation()}
             className={` ${
@@ -49,16 +46,6 @@ const Nav = () => {
             <NavLink to={"/"} className={" max-md:w-full"}>
               <div className=" max-md:bg-white font-semibold max-md:w-full max-md:h-12 max-md:flex max-md:items-center max-md:pl-2 max-md:shadow-lg max-md:rounded-md max-md:hover:scale-105">
                 Home
-              </div>
-            </NavLink>
-            <NavLink className={" max-md:w-full"} to={"/all_properties"}>
-              <div className=" max-md:bg-white font-semibold max-md:w-full max-md:h-12 max-md:flex max-md:items-center max-md:pl-2 max-md:shadow-lg max-md:rounded-md max-md:hover:scale-105">
-                All properties
-              </div>
-            </NavLink>
-            <NavLink className={" max-md:w-full"} to={"/dashboard"}>
-              <div className=" max-md:bg-white font-semibold max-md:w-full max-md:h-12 max-md:flex max-md:items-center max-md:pl-2 max-md:shadow-lg max-md:rounded-md max-md:hover:scale-105">
-                Dashboard
               </div>
             </NavLink>
           </div>
@@ -106,7 +93,10 @@ const Nav = () => {
               >
                 Cancel
               </button>
-              <button onClick={() => logout()} className=" btn text-white btn-success ">
+              <button
+                onClick={() => logout()}
+                className=" btn text-white btn-success "
+              >
                 Logout
               </button>
             </div>

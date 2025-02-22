@@ -5,10 +5,11 @@ import { useLocation } from "react-router-dom";
 const PublicRoute = ({ children }) => {
   const location = useLocation();
   const { data: loggedUser, isLoading } = useUsers();
+console.log(loggedUser)
   if (isLoading) {
     return <Loading />;
   }
-  if (loggedUser === null || loggedUser == undefined) {
+  if (loggedUser === null) {
     return children;
   }
   return <Navigate to={location.state === null ? "/" : location.state} />;
