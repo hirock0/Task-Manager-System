@@ -1,27 +1,26 @@
 import { useEffect, useState } from "react";
-import io from "socket.io-client";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { useSecureAxios } from "./utils/AxiosInstance/SecureAxiosInstance";
+import SortableItem from "./components/SortableItem/SortableItem";
+import swal from "sweetalert";
 import {
   SortableContext,
   verticalListSortingStrategy,
-  useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-
-const socket = io("http://localhost:8000");
 
 export default function App() {
   const axios = useSecureAxios();
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const categories = ["To-Do", "In Progress", "Done"];
+  const categories = ["To-Do", "In Progress", "Done", "Delete"];
 
-  useEffect(() => {
-    axios.get("/tasks").then((res) =>
+  const AllTasks = async () => {
+    try {
+      const response = await axios.get("/tasks");
+      const task = await response?.data;
       setTasks([
-        ...res.data,
+        ...task,
         {
           _id: "67b8792a60bbccc9192b4653",
           title: "Default",
@@ -43,10 +42,21 @@ export default function App() {
           category: "Done",
           order: 1,
         },
-      ])
-    );
-    socket.on("updateTasks", (updatedTasks) => setTasks(updatedTasks));
-    return () => socket.off("updateTasks");
+        {
+          _id: "67b8792a60bbccc9192b4655",
+          title: "Default",
+          description: "This is a default task",
+          category: "Delete",
+          order: 1,
+        },
+      ]);
+    } catch (error) {
+      throw new Error(error);
+    }
+  };
+
+  useEffect(() => {
+    AllTasks();
   }, []);
 
   const addTask = async () => {
@@ -56,13 +66,10 @@ export default function App() {
       description: newDescription,
       category: "To-Do",
     };
+    setTasks([newTaskData, ...tasks]);
     await axios.post("/tasks", newTaskData);
     setNewTask("");
     setNewDescription("");
-  };
-
-  const deleteTask = async (id) => {
-    await axios.delete(`/tasks/${id}`);
   };
 
   const handleDragEnd = async (event) => {
@@ -79,13 +86,25 @@ export default function App() {
       updatedTasks.splice(oldIndex, 1);
       updatedTasks.splice(newIndex, 0, movedTask);
     }
-
     setTasks(updatedTasks);
     await axios.put("/tasks/reorder", { updatedTasks });
+    const response = await axios.delete(`/tasks/${active?.id}`);
+
+    if (response?.data?.success) {
+      swal({
+        title: response?.data?.message,
+        icon: "success",
+        buttons: "ok",
+      });
+      // Update state after successful deletion
+      setTasks((prevTasks) =>
+        prevTasks.filter((task) => task?._id !== active?.id)
+      );
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen relative bg-gray-900 text-white p-8">
       <h1 className="text-3xl font-bold mb-4 text-center">Task Manager</h1>
       <div className="flex justify-center space-x-2 mb-4">
         <input
@@ -117,62 +136,33 @@ export default function App() {
               key={category}
               items={tasks
                 .filter((task) => task.category === category)
-                .map((task) => task._id)}
+                .map((task) => task?._id)}
               strategy={verticalListSortingStrategy}
             >
-              <div
-                className="bg-gray-800 p-4 rounded min-h-[300px]"
-                ref={(el) => el && (el.dataset.category = category)} // Store category
-                data-category={category} // Ensure category recognition
-              >
-                <h2 className="text-xl font-bold mb-2">{category}</h2>
-                {tasks
-                  .filter((task) => task.category === category)
-                  .map((task) => (
-                    <SortableItem
-                      key={task._id}
-                      task={task}
-                      deleteTask={deleteTask}
-                    />
-                  ))}
-              </div>
+              {category !== "Delete" ? (
+                <div
+                  className="bg-gray-800 p-4 rounded min-h-[300px]"
+                  ref={(el) => el && (el.dataset.category = category)} // Store category
+                  data-category={category} // Ensure category recognition
+                >
+                  <h2 className="text-xl font-bold mb-2">{category}</h2>
+                  {tasks
+                    .filter((task) => task.category === category)
+                    .map((task, index) => (
+                      <SortableItem key={index} task={task} />
+                    ))}
+                </div>
+              ) : (
+                <div className=" border rounded-md hover:bg-slate-700 flex items-center justify-center h-52 w-full col-span-3">
+                  <div className=" ">
+                    <h1 className=" text-white">Drag to Delete</h1>
+                  </div>
+                </div>
+              )}
             </SortableContext>
           ))}
         </div>
       </DndContext>
-    </div>
-  );
-}
-
-function SortableItem({ task, deleteTask }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task._id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div className="">
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        className="bg-gray-700 p-3 rounded mb-2 flex justify-between cursor-pointer"
-      >
-        <div>
-          <h4>{task.title}</h4>
-          <p className="text-sm">{task.description}</p>
-        </div>
-        <button
-          onClick={() => deleteTask(task._id)}
-          className="text-red-400 hover:text-red-600"
-        >
-          ✖
-        </button>
-      </div>
     </div>
   );
 }

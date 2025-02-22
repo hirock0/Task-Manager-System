@@ -4,20 +4,11 @@ import express from "express";
 import cors from "cors";
 import { userRoutes } from "./routes/user.route.js";
 import bodyParser from "body-parser";
-import { Server } from "socket.io";
 import mongoose from "mongoose";
-import http from "http";
 const port = process.env.PORT || 5000;
 const clientUrl = process.env.CLIENT_SIDE_URL;
 const clientUrl2 = process.env.MONGODB_URI_SECOND;
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: clientUrl2,
-  },
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -25,10 +16,25 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: clientUrl || clientUrl2,
+    origin: "*",
     credentials: true,
   })
 );
+
+
+
+// const db = mongoose.connection;
+// db.once("open", () => {
+//   console.log("✅ Connected to MongoDB");
+
+//   // Create a change stream on the tasks collection
+//   const taskChangeStream = db.collection("tasks").watch();
+
+//   taskChangeStream.on("change", async (change) => {
+//     console.log(change);
+//   });
+// });
+
 app.use("/api/user", userRoutes);
 
 mongoose.connect(clientUrl2);
@@ -49,22 +55,13 @@ const taskSchema = new mongoose.Schema({
 
 const Task = mongoose.model("Task", taskSchema);
 
-// Socket.io Connection
-io.on("connection", (socket) => {
-  console.log("New client connected");
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-  });
-});
-
 // Get all tasks
 app.get("/tasks", async (req, res) => {
   try {
     const tasks = await Task.find().sort({ order: 1 });
-    res.json(tasks);
+    return res.json(tasks);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -75,14 +72,11 @@ app.post("/tasks", async (req, res) => {
     const existingTasks = await Task.find({ category });
     const order = existingTasks.length; // New task gets the last order
 
-    const newTask = new Task({ title, description, category, order});
+    const newTask = new Task({ title, description, category, order });
     await newTask.save();
-
-    const tasks = await Task.find().sort({ order: 1 });
-    io.emit("updateTasks", tasks); // Broadcast update
-    res.status(201).json(newTask);
+    return res.status(201).json(newTask);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
@@ -90,13 +84,11 @@ app.post("/tasks", async (req, res) => {
 app.delete("/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(id)
     await Task.findByIdAndDelete(id);
-
-    const tasks = await Task.find().sort({ order: 1 });
-    io.emit("updateTasks", tasks); // Broadcast update
-    res.json({ message: "Task deleted" });
+    return res.status(200).json({ message: "Task deleted", success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -109,18 +101,15 @@ app.put("/tasks/reorder", async (req, res) => {
     for (let i = 0; i < updatedTasks.length; i++) {
       await Task.findByIdAndUpdate(updatedTasks[i]._id, {
         category: updatedTasks[i].category,
-        order: i, // Assign new order
+        order: i,
       });
     }
-
-    const tasks = await Task.find().sort({ order: 1 });
-    io.emit("updateTasks", tasks); // Broadcast update
-    res.json({ message: "Tasks reordered successfully" });
+    return res.json({ message: "Tasks reordered successfully" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
-app.listen(port, () => {
+app.listen(port || 5000, () => {
   console.log(`Backend is running on port ${port}`);
 });
