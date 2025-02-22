@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { useSecureAxios } from "./utils/AxiosInstance/SecureAxiosInstance";
 import SortableItem from "./components/SortableItem/SortableItem";
+import { useUsers } from "./utils/TanstackQuery/TanstackQuery";
 import swal from "sweetalert";
 import {
   SortableContext,
@@ -9,6 +10,8 @@ import {
 } from "@dnd-kit/sortable";
 
 export default function App() {
+  const { data: loggedUser, isLoading } = useUsers();
+
   const axios = useSecureAxios();
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
@@ -17,7 +20,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const AllTasks = async () => {
     try {
-      const response = await axios.get("/tasks");
+      const response = await axios.get(`/tasks/${loggedUser?.id}`);
       const task = await response?.data;
       setTasks([
         ...task,
@@ -65,6 +68,9 @@ export default function App() {
       title: newTask,
       description: newDescription,
       category: "To-Do",
+      userName: loggedUser?.name,
+      userEmail: loggedUser?.email,
+      userId: loggedUser?.id,
     };
     setTasks([newTaskData, ...tasks]);
     const response = await axios.post("/tasks", newTaskData);
@@ -126,7 +132,7 @@ export default function App() {
     <main className="relative">
       <div className="min-h-screen bg-gray-900 text-white p-8">
         <h1 className="text-3xl font-bold mb-4 text-center">Task Manager</h1>
-        <div className="flex justify-center space-x-2 mb-4">
+        <div className=" grid grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 gap-5 mb-4">
           <input
             type="text"
             className="p-2 rounded bg-gray-800"
@@ -143,17 +149,18 @@ export default function App() {
           />
           <button
             onClick={addTask}
-            className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-blue-500 max-md:col-span-2 max-sm:col-span-1 px-4 py-2 rounded hover:bg-blue-600"
           >
             Add Task
           </button>
         </div>
+        .
         <div className=" ">
           <DndContext
             collisionDetection={closestCorners}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-3 gap-4 overflow-hidden">
+            <div className="grid grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 gap-4 overflow-hidden">
               {categories.map((category) => (
                 <SortableContext
                   key={category}

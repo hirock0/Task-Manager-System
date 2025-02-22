@@ -33,6 +33,9 @@ const taskSchema = new mongoose.Schema({
     enum: ["To-Do", "In Progress", "Done"],
     required: true,
   },
+  userName: { type: String, required: true },
+  userEmail: { type: String, required: true },
+  userId: { type: String, required: true },
   default: { type: Boolean, required: false },
   order: { type: Number, required: true }, // Required for sorting
   createdAt: { type: Date, default: Date.now },
@@ -44,6 +47,17 @@ const Task = mongoose.model("Task", taskSchema);
 app.get("/tasks", async (req, res) => {
   try {
     const tasks = await Task.find().sort({ order: 1 });
+    return res.status(200).json(tasks);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+// Get usert tasks
+
+app.get("/tasks/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tasks = await Task.find({ userId: id }).sort({ order: 1 });
     return res.json(tasks);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -53,11 +67,20 @@ app.get("/tasks", async (req, res) => {
 // Add a new task
 app.post("/tasks", async (req, res) => {
   try {
-    const { title, description, category } = req.body;
+    const { title, description, category, userName, userEmail, userId } =
+      req.body;
     const existingTasks = await Task.find({ category });
     const order = existingTasks.length; // New task gets the last order
 
-    const newTask = new Task({ title, description, category, order });
+    const newTask = new Task({
+      title,
+      description,
+      category,
+      order,
+      userName,
+      userEmail,
+      userId,
+    });
     await newTask.save();
     return res.status(201).json({
       message: "Task added successfully",
@@ -84,7 +107,7 @@ app.put("/tasks/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const reqBody = await req.body;
-    await Task.findByIdAndUpdate(id,reqBody);
+    await Task.findByIdAndUpdate(id, reqBody);
     return res.status(200).json({ message: "Task deleted", success: true });
   } catch (error) {
     return res.status(500).json({ error: error.message });

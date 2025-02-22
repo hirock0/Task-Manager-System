@@ -86,7 +86,7 @@ export default function LoginPage() {
       {/* Left Side with Image */}
       <div className="md:w-1/2 max-md:hidden w-full h-64 md:h-full bg-gray-200">
         <img
-          src="https://i.ibb.co.com/JqYxCQZ/ergonomic-office-chair.webp"
+          src="https://cdn.pixabay.com/photo/2020/03/03/12/51/female-4898690_960_720.jpg"
           alt="Login"
           className="h-full w-full object-cover"
         />

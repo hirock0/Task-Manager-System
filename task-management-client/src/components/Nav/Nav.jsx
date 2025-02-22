@@ -35,20 +35,8 @@ const Nav = () => {
       <div className=" container mx-auto px-5">
         <div className="  flex items-center justify-between h-20">
           <div className=" font-semibold">Task Management</div>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className={` ${
-              !sidenavFlag
-                ? " max-md:translate-x-full"
-                : " max-md:translate-x-0"
-            } transition-all max-md:fixed max-md:right-0 max-md:top-20 max-md:flex-col max-md:items-start max-md:bg-slate-200 max-md:h-full max-md:w-1/2 max-sm:w-4/6 max-md:px-5 max-md:py-5 flex items-center gap-5 `}
-          >
-            <NavLink to={"/"} className={" max-md:w-full"}>
-              <div className=" max-md:bg-white font-semibold max-md:w-full max-md:h-12 max-md:flex max-md:items-center max-md:pl-2 max-md:shadow-lg max-md:rounded-md max-md:hover:scale-105">
-                Home
-              </div>
-            </NavLink>
-          </div>
+
+          <Link to={"/"}>Home</Link>
 
           <div className=" flex items-center gap-5">
             {loggedUser ? (
@@ -65,15 +53,6 @@ const Nav = () => {
             ) : (
               <Link to={"/login"}>Login</Link>
             )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation(), setSideNavFlag(!sidenavFlag);
-              }}
-              className=" md:hidden"
-            >
-              <MdMenu size={30} />
-            </button>
           </div>
         </div>
       </div>
