@@ -79,6 +79,18 @@ app.delete("/tasks/:id", async (req, res) => {
   }
 });
 
+// update tasks
+app.put("/tasks/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reqBody = await req.body;
+    await Task.findByIdAndUpdate(id,reqBody);
+    return res.status(200).json({ message: "Task deleted", success: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // Reorder tasks after drag-and-drop
 app.put("/tasks/reorder", async (req, res) => {
   try {

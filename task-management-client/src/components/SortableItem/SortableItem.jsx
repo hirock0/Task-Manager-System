@@ -11,7 +11,7 @@ const SortableItem = ({ task }) => {
 
   return (
     <div className="">
-
+      <a href={`/task/${task?._id}`}>
         <div className="">
           <div
             ref={setNodeRef}
@@ -26,7 +26,7 @@ const SortableItem = ({ task }) => {
             </div>
           </div>
         </div>
- 
+      </a>
     </div>
   );
 };
